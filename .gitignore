@@ -1,60 +1,70 @@
-.gradle
-build/
-!gradle/wrapper/gradle-wrapper.jar
-!**/src/main/**/build/
-!**/src/test/**/build/
-.kotlin
-
-### IntelliJ IDEA ###
-.idea/modules.xml
-.idea/jarRepositories.xml
-.idea/compiler.xml
-.idea/libraries/
-*.iws
-*.iml
-*.ipr
-out/
-!**/src/main/**/out/
-!**/src/test/**/out/
-
-### Eclipse ###
+### STS ###
 .apt_generated
 .classpath
 .factorypath
 .project
 .settings
 .springBeans
-.sts4-cache
-bin/
-!**/src/main/**/bin/
-!**/src/test/**/bin/
-
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-
-### VS Code ###
-.vscode/
-
-### Mac OS ###
-.DS_Store
-
-### Gradle ###
-.gradle/
-build/
-
-### IntelliJ ###
+ㄹ
+### IntelliJ IDEA ###
 .idea/
 *.iml
+*.ipr
+*.iws
 out/
+
+### VSCode ###
+.vscode/
+
+### Build ###
+target/
+build/
+bin/
+out/
+.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+
+### Logs ###
+logs/
+*.log
+log/
 
 ### OS ###
 .DS_Store
+Thumbs.db
 
-### Project ###
-/uploads/
-/bin/
-/target/
+### JAR / WAR ###
+*.jar
+*.war
+*.zip
+
+### Temporary files ###
+*.tmp
+*.temp
+*.swp
+
+### Spring ###
+.spring/
+!src/main/resources/
+!src/main/java/
+
+### Uploaded files (중요: 음원, 이미지 등) ###
+uploads/
+media/
+static/uploads/
+resources/uploads/
+
+### Environment ###
+*.env
+.env.*
+
+### Node (혹시 프론트 포함될 경우 대비) ###
+node_modules/
+npm-debug.log
+yarn-error.log
+
+### Token / Secrets ###
+*.pem
+*.key
+*.keystore
+*.jks
