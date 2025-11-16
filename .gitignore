@@ -5,7 +5,7 @@
 .project
 .settings
 .springBeans
-ㄹ
+
 ### IntelliJ IDEA ###
 .idea/
 *.iml
@@ -48,7 +48,7 @@ Thumbs.db
 !src/main/resources/
 !src/main/java/
 
-### Uploaded files (중요: 음원, 이미지 등) ###
+### Uploaded files (중요) ###
 uploads/
 media/
 static/uploads/
@@ -58,7 +58,7 @@ resources/uploads/
 *.env
 .env.*
 
-### Node (혹시 프론트 포함될 경우 대비) ###
+### Node ###
 node_modules/
 npm-debug.log
 yarn-error.log
