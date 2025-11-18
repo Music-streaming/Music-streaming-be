@@ -29,13 +29,13 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
-        // CORS 허용
+        // CORS 설정
         http.cors(cors -> cors.configurationSource(request -> {
             CorsConfiguration config = new CorsConfiguration();
             config.setAllowCredentials(true);
             config.setAllowedOriginPatterns(List.of("*"));
             config.setAllowedHeaders(List.of("*"));
-            config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+            config.setAllowedMethods(List.of("*"));
             config.setExposedHeaders(List.of("Authorization"));
             return config;
         }));
@@ -43,12 +43,13 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/spotify/**").permitAll()
+                        .requestMatchers("/api/youtube/**").permitAll()
+
                         .anyRequest().authenticated()
                 )
-
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

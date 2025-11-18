@@ -26,6 +26,8 @@ repositories {
 
 dependencies {
     // ✅ Spring Boot 기본
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'   // ★ 추가
+
 // ✅ Spring Boot 기본
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-security'
