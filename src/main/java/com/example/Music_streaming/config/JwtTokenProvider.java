@@ -22,11 +22,13 @@ import java.util.List;
 @Component
 public class JwtTokenProvider {
 
-    @Value("${jwt.secret.key}")
+    @Value("${jwt.secret}")
     private String secretKey;
-    private Key key;
 
-    private final long tokenValidTime = 60 * 60 * 1000L; // 1시간
+    @Value("${jwt.expiration}")
+    private long tokenValidTime; // 토큰 유효시간
+
+    private Key key;
 
     @PostConstruct
     protected void init() {

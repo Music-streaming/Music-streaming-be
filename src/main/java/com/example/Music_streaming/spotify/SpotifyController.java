@@ -1,9 +1,10 @@
 package com.example.Music_streaming.spotify;
 
+import com.example.Music_streaming.spotify.dto.TrackResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -13,7 +14,7 @@ public class SpotifyController {
     private final SpotifyService spotifyService;
 
     @GetMapping("/search")
-    public Map search(@RequestParam String query) {
+    public List<TrackResponse> search(@RequestParam String query) {
         return spotifyService.searchTracks(query);
     }
 }

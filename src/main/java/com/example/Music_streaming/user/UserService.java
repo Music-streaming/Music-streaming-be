@@ -4,6 +4,7 @@ import com.example.Music_streaming.config.JwtTokenProvider;
 import com.example.Music_streaming.user.dto.LoginRequestDto;
 import com.example.Music_streaming.user.dto.LoginResponseDto;
 import com.example.Music_streaming.user.dto.RegisterRequestDto;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -46,5 +47,10 @@ public class UserService {
         String token = jwtTokenProvider.createToken(user.getEmail(), user.getId());
 
         return new LoginResponseDto(token, user.getUsername(), user.getEmail());
+    }
+
+    @Transactional(readOnly = true)
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
     }
 }
