@@ -1,5 +1,7 @@
-package com.findDream.domain;
+package com.example.Music_streaming.comment;
 
+import com.example.Music_streaming.playlist.PlaylistTrack;
+import com.example.Music_streaming.user.User;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -23,24 +25,20 @@ public class Comment {
     private String content;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user; // 댓글 작성자
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "track_id")
-    private Track track; // 어떤 음원에 달린 댓글인지
-
-    @Enumerated(EnumType.STRING)
-    private RatingType rating; // 만족, 불만족
+    @JoinColumn(name = "playlist_track_id", nullable = false)
+    private PlaylistTrack playlistTrack;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
     private Comment parent;
 
     @Builder.Default
-    @OneToMany(mappedBy = "parent", orphanRemoval = true)
+    @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comment> children = new ArrayList<>();
-
 
     private LocalDateTime createdAt;
 
