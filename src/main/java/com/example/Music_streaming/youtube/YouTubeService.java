@@ -13,9 +13,6 @@ public class YouTubeService {
     @Value("${youtube.api.key}")
     private String apiKey;
 
-    @Value("${youtube.api.search.url}")
-    private String searchUrl;
-
     @Value("${youtube.api.max-results:1}")
     private int maxResults;
 

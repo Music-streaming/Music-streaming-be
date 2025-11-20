@@ -6,6 +6,7 @@ import com.example.Music_streaming.user.User;
 import com.example.Music_streaming.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -15,50 +16,51 @@ public class TrackLikeService {
     private final TrackRepository trackRepository;
     private final UserRepository userRepository;
 
-    public boolean toggleLike(Long trackId, Long userId) {
+    /**
+     * 좋아요 토글 (true = 좋아요됨, false = 좋아요 취소됨)
+     */
+    @Transactional
+    public boolean toggleLike(Long trackId, String userEmail) {
 
         Track track = trackRepository.findById(trackId)
                 .orElseThrow(() -> new RuntimeException("Track not found"));
 
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // 이미 좋아요 눌렀으면 취소
         var exist = likeRepository.findByTrackAndUser(track, user);
 
         if (exist.isPresent()) {
             likeRepository.delete(exist.get());
-            track.setLikeCount(track.getLikeCount() - 1);
-            trackRepository.save(track);
-            return false; // 좋아요 취소됨
+            track.setLikeCount(Math.max(0, track.getLikeCount() - 1));
+            return false;
         }
 
-        // 처음 좋아요
         TrackLike like = TrackLike.builder()
                 .track(track)
                 .user(user)
                 .build();
 
         likeRepository.save(like);
-
         track.setLikeCount(track.getLikeCount() + 1);
-        trackRepository.save(track);
 
-        return true; // 좋아요 성공
+        return true;
     }
 
+    @Transactional(readOnly = true)
     public long count(Long trackId) {
         Track track = trackRepository.findById(trackId)
                 .orElseThrow(() -> new RuntimeException("Track not found"));
-
         return likeRepository.countByTrack(track);
     }
 
-    public boolean isLiked(Long trackId, Long userId) {
+    @Transactional(readOnly = true)
+    public boolean isLiked(Long trackId, String userEmail) {
+
         Track track = trackRepository.findById(trackId)
                 .orElseThrow(() -> new RuntimeException("Track not found"));
 
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         return likeRepository.existsByTrackAndUser(track, user);

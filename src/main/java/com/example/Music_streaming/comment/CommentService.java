@@ -31,6 +31,9 @@ public class CommentService {
         if (req.getParentId() != null) {
             parent = commentRepository.findById(req.getParentId())
                     .orElseThrow(() -> new RuntimeException("Parent comment not found"));
+            if (!parent.getPlaylistTrack().getId().equals(playlistTrackId)) {
+                throw new RuntimeException("부모 댓글이 다른 트랙에 속해 있습니다.");
+            }
         }
 
         Comment comment = Comment.builder()
@@ -75,10 +78,14 @@ public class CommentService {
     }
 
     @Transactional
-    public void deleteComment(Long commentId, String userEmail) {
+    public void deleteComment(Long playlistTrackId, Long commentId, String userEmail) {
 
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new RuntimeException("Comment not found"));
+
+        if (!comment.getPlaylistTrack().getId().equals(playlistTrackId)) {
+            throw new RuntimeException("잘못된 트랙의 댓글입니다.");
+        }
 
         if (!comment.getUser().getEmail().equals(userEmail)) {
             throw new RuntimeException("권한이 없습니다.");

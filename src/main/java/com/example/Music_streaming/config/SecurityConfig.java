@@ -47,7 +47,6 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/spotify/**").permitAll()
                         .requestMatchers("/api/youtube/**").permitAll()
-                        .requestMatchers("/api/users/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

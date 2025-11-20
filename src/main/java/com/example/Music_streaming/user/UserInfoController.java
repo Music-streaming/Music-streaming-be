@@ -2,8 +2,9 @@ package com.example.Music_streaming.user;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
@@ -12,15 +13,12 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class UserInfoController {
 
-    private final UserRepository userRepository;
+    private final UserService userService;
 
     @GetMapping("/me")
-    public ResponseEntity<?> getMyInfo(Authentication auth) {
+    public ResponseEntity<?> getMyInfo() {
 
-        String email = auth.getName();
-
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+        User user = userService.getCurrentUser();
 
         return ResponseEntity.ok(Map.of(
                 "id", user.getId(),

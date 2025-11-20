@@ -13,7 +13,7 @@ public class SpotifyController {
     private final SpotifyService spotifyService;
 
     @GetMapping("/search")
-    public Map search(@RequestParam String query) {
+    public Map<String, Object> search(@RequestParam String query) {
         return spotifyService.searchTracks(query);
     }
 }

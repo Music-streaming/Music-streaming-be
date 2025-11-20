@@ -1,9 +1,16 @@
 package com.example.Music_streaming.like;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequiredArgsConstructor
@@ -12,38 +19,36 @@ public class TrackLikeController {
 
     private final TrackLikeService likeService;
 
-    // 좋아요 / 취소
     @PostMapping
-    public ResponseEntity<?> toggle(
+    public ResponseEntity<Boolean> toggleLike(
             @PathVariable Long trackId,
-            @AuthenticationPrincipal String userId
+            @AuthenticationPrincipal UserDetails principal
     ) {
-        Long uid = Long.parseLong(userId);
-
-        boolean liked = likeService.toggleLike(trackId, uid);
-
-        return ResponseEntity.ok(
-                liked ? "liked" : "unliked"
-        );
+        String email = requireUser(principal);
+        boolean liked = likeService.toggleLike(trackId, email);
+        return ResponseEntity.ok(liked);
     }
 
-    // 좋아요 수 조회
     @GetMapping("/count")
-    public ResponseEntity<?> count(@PathVariable Long trackId) {
+    public ResponseEntity<Long> count(@PathVariable Long trackId) {
         long count = likeService.count(trackId);
         return ResponseEntity.ok(count);
     }
 
-    // 현재 유저가 좋아요 눌렀는지 여부
     @GetMapping("/status")
-    public ResponseEntity<?> status(
+    public ResponseEntity<Boolean> status(
             @PathVariable Long trackId,
-            @AuthenticationPrincipal String userId
+            @AuthenticationPrincipal UserDetails principal
     ) {
-        Long uid = Long.parseLong(userId);
-
-        boolean liked = likeService.isLiked(trackId, uid);
-
+        String email = requireUser(principal);
+        boolean liked = likeService.isLiked(trackId, email);
         return ResponseEntity.ok(liked);
+    }
+
+    private String requireUser(UserDetails principal) {
+        if (principal == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다.");
+        }
+        return principal.getUsername();
     }
 }

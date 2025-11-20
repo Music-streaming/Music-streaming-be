@@ -3,17 +3,19 @@ package com.example.Music_streaming.playlist;
 import com.example.Music_streaming.playlist.dto.AddTrackRequest;
 import com.example.Music_streaming.playlist.dto.CreatePlaylistRequest;
 import com.example.Music_streaming.playlist.dto.PlaylistResponse;
+import com.example.Music_streaming.spotify.SpotifyService;
+import com.example.Music_streaming.spotify.TrackMetadata;
+import com.example.Music_streaming.track.Track;
+import com.example.Music_streaming.track.TrackRepository;
 import com.example.Music_streaming.user.User;
-import com.example.Music_streaming.user.UserRepository;
+import com.example.Music_streaming.user.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-
-import static java.util.stream.Collectors.toList;
 
 @Service
 @RequiredArgsConstructor
@@ -22,132 +24,125 @@ public class PlaylistService {
 
     private final PlaylistRepository playlistRepository;
     private final PlaylistTrackRepository playlistTrackRepository;
-    private final UserRepository userRepository;
+    private final UserService userService;
+    private final SpotifyService spotifyService;
+    private final TrackRepository trackRepository;
 
-    // 현재 로그인한 유저 조회
-    private User getCurrentUser() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String email = auth.getName();  // JwtTokenProvider에서 subject로 email 넣어놨으니 이 값이 email
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
-    }
-
-    // 플레이리스트 생성
+    /**
+     * 플레이리스트 생성
+     */
     public PlaylistResponse createPlaylist(CreatePlaylistRequest request) {
-        User currentUser = getCurrentUser();
+
+        User owner = userService.getCurrentUser();
 
         Playlist playlist = Playlist.builder()
                 .name(request.getName())
                 .description(request.getDescription())
                 .isPublic(request.isPublic())
-                .owner(currentUser)
+                .owner(owner)
                 .build();
 
-        Playlist saved = playlistRepository.save(playlist);
-
-        return toResponse(saved);
+        playlistRepository.save(playlist);
+        return PlaylistResponse.from(playlist);
     }
 
-    // 내 플레이리스트 목록
-    @Transactional(readOnly = true)
+    /**
+     * 내 플레이리스트 목록
+     */
     public List<PlaylistResponse> getMyPlaylists() {
-        User currentUser = getCurrentUser();
-        return playlistRepository.findByOwner(currentUser)
-                .stream()
-                .map(this::toResponse)
-                .collect(toList());
+
+        User owner = userService.getCurrentUser();
+        List<Playlist> playlists = playlistRepository.findByOwner(owner);
+
+        return playlists.stream()
+                .map(PlaylistResponse::from)
+                .toList();
     }
 
-    // 단일 플레이리스트 조회 (공개 or 내 것만)
-    @Transactional(readOnly = true)
+    /**
+     * 플레이리스트 상세조회
+     */
     public PlaylistResponse getPlaylist(Long id) {
-        User currentUser = getCurrentUser();
 
         Playlist playlist = playlistRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("플레이리스트가 존재하지 않습니다."));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Playlist not found"));
 
-        if (!playlist.isPublic() && !playlist.getOwner().getId().equals(currentUser.getId())) {
-            throw new IllegalArgumentException("접근 권한이 없습니다.");
-        }
+        validateOwner(playlist);
 
-        return toResponse(playlist);
+        return PlaylistResponse.from(playlist);
     }
 
-    // 트랙 추가
+    /**
+     * 트랙 추가 (Spotify trackId만 받음)
+     */
     public PlaylistResponse addTrack(Long playlistId, AddTrackRequest request) {
-        User currentUser = getCurrentUser();
 
         Playlist playlist = playlistRepository.findById(playlistId)
-                .orElseThrow(() -> new IllegalArgumentException("플레이리스트가 존재하지 않습니다."));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Playlist not found"));
 
-        if (!playlist.getOwner().getId().equals(currentUser.getId())) {
-            throw new IllegalArgumentException("본인 플레이리스트에만 곡을 추가할 수 있습니다.");
-        }
+        validateOwner(playlist);
 
-        int order = request.getOrder() != null
-                ? request.getOrder()
-                : (playlist.getTracks().size() + 1);
+        TrackMetadata metadata = spotifyService.getTrackMetadata(request.getTrackId());
+        Track trackEntity = trackRepository.findBySpotifyTrackId(request.getTrackId())
+                .orElseGet(() -> trackRepository.save(Track.builder()
+                        .spotifyTrackId(request.getTrackId())
+                        .title(metadata.title())
+                        .artist(metadata.artist())
+                        .album(metadata.album())
+                        .thumbnailUrl(metadata.thumbnailUrl())
+                        .durationMs(metadata.durationMs())
+                        .build()));
 
         PlaylistTrack track = PlaylistTrack.builder()
                 .playlist(playlist)
-                .title(request.getTitle())
-                .artist(request.getArtist())
-                .album(request.getAlbum())
-                .thumbnailUrl(request.getThumbnailUrl())
-                .durationMs(request.getDurationMs())
-                .spotifyTrackId(request.getSpotifyTrackId())
-                .trackOrder(order)
+                .spotifyTrackId(request.getTrackId())
+                .title(trackEntity.getTitle())
+                .artist(trackEntity.getArtist())
+                .album(trackEntity.getAlbum())
+                .thumbnailUrl(trackEntity.getThumbnailUrl())
+                .durationMs(trackEntity.getDurationMs())
+                .trackOrder(playlistTrackRepository.countByPlaylist(playlist) + 1)
                 .build();
-
-        playlist.getTracks().add(track);
         playlistTrackRepository.save(track);
+        playlist.getTracks().add(track);
 
-        return toResponse(playlist);
+        return PlaylistResponse.from(playlist);
     }
 
-    // 트랙 삭제
-    public void removeTrack(Long playlistId, Long trackId) {
-        User currentUser = getCurrentUser();
+    /**
+     * 트랙 삭제
+     */
+    public void removeTrack(Long playlistId, Long playlistTrackId) {
 
         Playlist playlist = playlistRepository.findById(playlistId)
-                .orElseThrow(() -> new IllegalArgumentException("플레이리스트가 존재하지 않습니다."));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Playlist not found"));
 
-        if (!playlist.getOwner().getId().equals(currentUser.getId())) {
-            throw new IllegalArgumentException("본인 플레이리스트만 수정할 수 있습니다.");
+        validateOwner(playlist);
+
+        PlaylistTrack track = playlistTrackRepository.findById(playlistTrackId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Track not found"));
+
+        if (!track.getPlaylist().equals(playlist)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "트랙이 해당 플레이리스트에 속하지 않습니다.");
         }
 
-        PlaylistTrack track = playlistTrackRepository.findById(trackId)
-                .orElseThrow(() -> new IllegalArgumentException("트랙이 존재하지 않습니다."));
-
-        if (!track.getPlaylist().getId().equals(playlistId)) {
-            throw new IllegalArgumentException("플레이리스트에 속한 트랙이 아닙니다.");
-        }
-
-        playlist.getTracks().remove(track);
         playlistTrackRepository.delete(track);
+        playlist.getTracks().removeIf(t -> t.getId().equals(track.getId()));
+        reorderTracks(playlist);
     }
 
-    // Entity -> DTO 변환
-    private PlaylistResponse toResponse(Playlist playlist) {
-        return PlaylistResponse.builder()
-                .id(playlist.getId())
-                .name(playlist.getName())
-                .description(playlist.getDescription())
-                .isPublic(playlist.isPublic())
-                .tracks(
-                        playlist.getTracks().stream()
-                                .map(t -> PlaylistResponse.TrackResponse.builder()
-                                        .id(t.getId())
-                                        .title(t.getTitle())
-                                        .artist(t.getArtist())
-                                        .album(t.getAlbum())
-                                        .thumbnailUrl(t.getThumbnailUrl())
-                                        .durationMs(t.getDurationMs())
-                                        .spotifyTrackId(t.getSpotifyTrackId())
-                                        .order(t.getTrackOrder())
-                                        .build())
-                                .collect(toList())
-                )
-                .build();
+    private void validateOwner(Playlist playlist) {
+        User current = userService.getCurrentUser();
+        if (!playlist.getOwner().getId().equals(current.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "해당 플레이리스트에 대한 권한이 없습니다.");
+        }
+    }
+
+    private void reorderTracks(Playlist playlist) {
+        List<PlaylistTrack> remaining = playlist.getTracks();
+        remaining.sort((a, b) -> Integer.compare(a.getTrackOrder(), b.getTrackOrder()));
+        for (int i = 0; i < remaining.size(); i++) {
+            remaining.get(i).setTrackOrder(i + 1);
+        }
     }
 }
