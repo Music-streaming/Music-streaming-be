@@ -301,4 +301,41 @@
 
 ---
 
+## 6. 통합 재생 / Player API
+
+### GET `/api/player/search?query={keyword}`
+- 설명: 스포티파이 검색 결과를 YouTube 영상 매칭과 함께 반환
+- 기대 응답: `200 OK`, `[ { "spotifyTrackId": "...", "youtubeEmbedUrl": "...", ... }, ... ]`
+- 인증: `Authorization: Bearer <JWT>`
+
+테스트 메모:
+```
+- 상태 코드:
+- 응답 본문 개수:
+- 임의 트랙의 youtubeEmbedUrl:
+```
+
+### GET `/api/player/tracks/{spotifyTrackId}`
+- 설명: 특정 곡(Spotify ID)의 재생 정보를 즉시 조회
+- 기대 응답: `200 OK`, `PlayableTrackResponse`
+
+테스트 메모:
+```
+- 상태 코드:
+- youtubeVideoId:
+```
+
+### GET `/api/player/playlists/{playlistId}`
+- 설명: 내 플레이리스트를 재생 큐 형태로 반환 (`tracks` 배열은 순서 보장)
+- 기대 응답: `200 OK`, `{ "playlistId": 1, "tracks": [ ... ] }`
+
+테스트 메모:
+```
+- 상태 코드:
+- 트랙 개수:
+- 첫 번째 youtubeEmbedUrl:
+```
+
+---
+
 필요 시 이 파일을 복제해 실제 테스트 결과를 남기거나, 항목별로 체크박스를 추가해 QA 체크리스트로 활용하세요.
