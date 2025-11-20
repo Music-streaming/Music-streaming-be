@@ -1,37 +1,39 @@
-HELP.md
-.gradle
+### JDK (실수로 프로젝트에 넣은 JDK 전체 무시) ###
+jdk-21/
+jdk-17/
+jdk/
+**/lib/modules
+**/lib/src.zip
+
+### Gradle Cache (절대 업로드 금지) ###
+.gradle/
+.gradle-home/
+**/wrapper/dists/
+**/dists/
+**/caches/
+
+### Build Output (IDE가 생성하는 것들) ###
 build/
-!gradle/wrapper/gradle-wrapper.jar
-!**/src/main/**/build/
-!**/src/test/**/build/
-
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-bin/
-!**/src/main/**/bin/
-!**/src/test/**/bin/
-
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
+target/
 out/
-!**/src/main/**/out/
-!**/src/test/**/out/
 
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
+### Large Binary Files ###
+*.zip
+*.tar
+*.gz
+*.jar
+*.war
+*.ear
 
-### VS Code ###
-.vscode/
+### OS Files ###
+.DS_Store
+Thumbs.db
+
+### Logs ###
+*.log
+
+### Java ###
+*.class
+
+### Misc ###
+node_modules/
