@@ -33,4 +33,8 @@ public class Track {
     @Builder.Default
     @Column(nullable = false)
     private long likeCount = 0L;
+
+    @Lob
+    @Column(columnDefinition = "TEXT")
+    private String lyrics;
 }

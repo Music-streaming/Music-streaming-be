@@ -3,6 +3,8 @@ package com.example.Music_streaming.playlist;
 import com.example.Music_streaming.playlist.dto.AddTrackRequest;
 import com.example.Music_streaming.playlist.dto.CreatePlaylistRequest;
 import com.example.Music_streaming.playlist.dto.PlaylistResponse;
+import com.example.Music_streaming.playlist.dto.ReorderTracksRequest;
+import com.example.Music_streaming.playlist.dto.UpdatePlaylistRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
@@ -43,5 +45,17 @@ public class PlaylistController {
                                             @PathVariable Long trackId) {
         playlistService.removeTrack(id, trackId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}")
+    public PlaylistResponse updatePlaylist(@PathVariable Long id,
+                                           @RequestBody UpdatePlaylistRequest request) {
+        return playlistService.updatePlaylist(id, request);
+    }
+
+    @PostMapping("/{id}/tracks/reorder")
+    public PlaylistResponse reorderTracks(@PathVariable Long id,
+                                          @RequestBody ReorderTracksRequest request) {
+        return playlistService.reorderTracks(id, request);
     }
 }

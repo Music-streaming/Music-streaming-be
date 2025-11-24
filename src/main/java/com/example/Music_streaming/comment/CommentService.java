@@ -93,4 +93,22 @@ public class CommentService {
 
         commentRepository.delete(comment);
     }
+
+    @Transactional
+    public CommentResponse updateComment(Long playlistTrackId, Long commentId, String userEmail, CommentRequest request) {
+
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new RuntimeException("Comment not found"));
+
+        if (!comment.getPlaylistTrack().getId().equals(playlistTrackId)) {
+            throw new RuntimeException("잘못된 트랙의 댓글입니다.");
+        }
+
+        if (!comment.getUser().getEmail().equals(userEmail)) {
+            throw new RuntimeException("권한이 없습니다.");
+        }
+
+        comment.setContent(request.getContent());
+        return new CommentResponse(comment);
+    }
 }

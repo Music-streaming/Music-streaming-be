@@ -3,6 +3,8 @@ package com.example.Music_streaming.playlist;
 import com.example.Music_streaming.playlist.dto.AddTrackRequest;
 import com.example.Music_streaming.playlist.dto.CreatePlaylistRequest;
 import com.example.Music_streaming.playlist.dto.PlaylistResponse;
+import com.example.Music_streaming.playlist.dto.ReorderTracksRequest;
+import com.example.Music_streaming.playlist.dto.UpdatePlaylistRequest;
 import com.example.Music_streaming.spotify.SpotifyService;
 import com.example.Music_streaming.spotify.TrackMetadata;
 import com.example.Music_streaming.track.Track;
@@ -16,6 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -129,6 +133,53 @@ public class PlaylistService {
         playlistTrackRepository.delete(track);
         playlist.getTracks().removeIf(t -> t.getId().equals(track.getId()));
         reorderTracks(playlist);
+    }
+
+    public PlaylistResponse updatePlaylist(Long playlistId, UpdatePlaylistRequest request) {
+        Playlist playlist = playlistRepository.findById(playlistId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Playlist not found"));
+        validateOwner(playlist);
+
+        if (request.getName() != null) {
+            playlist.setName(request.getName());
+        }
+        if (request.getDescription() != null) {
+            playlist.setDescription(request.getDescription());
+        }
+        if (request.getIsPublic() != null) {
+            playlist.setPublic(request.getIsPublic());
+        }
+        playlistRepository.save(playlist);
+        return PlaylistResponse.from(playlist);
+    }
+
+    public PlaylistResponse reorderTracks(Long playlistId, ReorderTracksRequest request) {
+        Playlist playlist = playlistRepository.findById(playlistId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Playlist not found"));
+        validateOwner(playlist);
+
+        if (request.getOrderedTrackIds() == null || request.getOrderedTrackIds().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "정렬할 트랙 목록이 필요합니다.");
+        }
+
+        List<PlaylistTrack> tracks = playlist.getTracks();
+        if (tracks.size() != request.getOrderedTrackIds().size()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "모든 트랙 ID를 포함해야 합니다.");
+        }
+
+        Map<Long, PlaylistTrack> trackMap = tracks.stream()
+                .collect(Collectors.toMap(PlaylistTrack::getId, t -> t));
+
+        int order = 1;
+        for (Long trackId : request.getOrderedTrackIds()) {
+            PlaylistTrack playlistTrack = trackMap.get(trackId);
+            if (playlistTrack == null) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "잘못된 트랙 ID: " + trackId);
+            }
+            playlistTrack.setTrackOrder(order++);
+        }
+        playlistTrackRepository.saveAll(tracks);
+        return PlaylistResponse.from(playlist);
     }
 
     private void validateOwner(Playlist playlist) {

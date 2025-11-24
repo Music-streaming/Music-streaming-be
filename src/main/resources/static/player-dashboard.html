@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>Music Streaming Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #0b0c10;
+      color: #f5f6fa;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      padding: 16px 24px;
+      background: linear-gradient(90deg, #1db954, #1a73e8);
+      color: #0b0c10;
+      font-weight: 700;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.4rem;
+    }
+    main {
+      flex: 1;
+      padding: 24px;
+      display: grid;
+      gap: 24px;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    }
+    section {
+      background: #111318;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+    }
+    section h2 {
+      margin-top: 0;
+      font-size: 1.2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    label {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 0.9rem;
+      color: #9aa0b1;
+    }
+    input, button, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: none;
+      margin-bottom: 10px;
+      font-size: 0.95rem;
+    }
+    input, textarea {
+      background: #1b1e25;
+      color: #f5f6fa;
+    }
+    button {
+      background: #1db954;
+      color: #0b0c10;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(29,185,84,0.4);
+    }
+    .track-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 380px;
+      overflow: auto;
+    }
+    .track-item {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      padding: 12px;
+      border-radius: 12px;
+      background: #1b1e25;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .track-item:hover {
+      background: #222634;
+    }
+    .track-item img {
+      width: 60px;
+      height: 60px;
+      border-radius: 12px;
+      object-fit: cover;
+    }
+    .track-meta {
+      flex: 1;
+    }
+    .track-meta strong {
+      display: block;
+      font-size: 0.95rem;
+    }
+    .track-meta span {
+      font-size: 0.85rem;
+      color: #a5adbf;
+    }
+    .player iframe {
+      width: 100%;
+      height: 280px;
+      border: none;
+      border-radius: 14px;
+      background: #000;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.1);
+      font-size: 0.8rem;
+    }
+    .status {
+      font-size: 0.85rem;
+      color: #9aa0b1;
+    }
+    @media (max-width: 720px) {
+      header { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Music Streaming Dashboard</h1>
+  <div class="status" id="statusText">로그인 필요</div>
+</header>
+
+<main>
+  <section>
+    <h2>1. 로그인<span class="pill">/api/auth/login</span></h2>
+    <label>Email</label>
+    <input type="email" id="loginEmail" placeholder="user@example.com" />
+    <label>Password</label>
+    <input type="password" id="loginPassword" placeholder="••••••" />
+    <button onclick="login()">로그인</button>
+    <button style="background:#f03e3e;color:#fff;" onclick="logout()">로그아웃</button>
+    <small id="loginMessage" class="status"></small>
+  </section>
+
+  <section>
+    <h2>2. 노래 검색<span class="pill">/api/player/search</span></h2>
+    <label>검색어</label>
+    <input type="text" id="searchQuery" placeholder="아티스트나 곡명" />
+    <button onclick="searchTracks()">검색</button>
+    <ul class="track-list" id="trackList"></ul>
+  </section>
+
+  <section class="player">
+    <h2>3. Now Playing<span class="pill">YouTube Embed</span></h2>
+    <iframe id="playerFrame" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+    <div id="nowPlaying" class="status" style="margin-top:10px;">선택된 곡이 없습니다.</div>
+    <button onclick="logPlayback()">이 곡 재생 기록 남기기</button>
+  </section>
+</main>
+
+<script>
+  const BASE_URL = window.location.origin;
+  const statusText = document.getElementById('statusText');
+  const loginMessage = document.getElementById('loginMessage');
+  const trackList = document.getElementById('trackList');
+  const playerFrame = document.getElementById('playerFrame');
+  const nowPlaying = document.getElementById('nowPlaying');
+
+  function setToken(token) {
+    if (token) {
+      localStorage.setItem('jwt', token);
+      statusText.textContent = '로그인됨';
+    } else {
+      localStorage.removeItem('jwt');
+      statusText.textContent = '로그인 필요';
+    }
+  }
+
+  setToken(localStorage.getItem('jwt'));
+
+  async function login() {
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+    loginMessage.textContent = '로그인 시도 중...';
+    try {
+      const res = await fetch(`${BASE_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '로그인 실패');
+      setToken(`Bearer ${data.token}`);
+      loginMessage.textContent = `${data.username} 환영합니다!`;
+    } catch (err) {
+      loginMessage.textContent = err.message;
+      setToken(null);
+    }
+  }
+
+  function logout() {
+    setToken(null);
+    loginMessage.textContent = '로그아웃되었습니다.';
+  }
+
+  async function searchTracks() {
+    const query = document.getElementById('searchQuery').value;
+    trackList.innerHTML = '<li class="status">검색 중...</li>';
+    try {
+      const res = await fetch(`${BASE_URL}/api/player/search?query=${encodeURIComponent(query)}`);
+      const data = await res.json();
+      renderTrackList(data);
+    } catch (err) {
+      trackList.innerHTML = `<li class="status">오류: ${err.message}</li>`;
+    }
+  }
+
+  function renderTrackList(tracks) {
+    if (!Array.isArray(tracks) || tracks.length === 0) {
+      trackList.innerHTML = '<li class="status">검색 결과가 없습니다.</li>';
+      return;
+    }
+    trackList.innerHTML = '';
+    tracks.forEach(track => {
+      const li = document.createElement('li');
+      li.className = 'track-item';
+      li.innerHTML = `
+        <img src="${track.thumbnailUrl || 'https://via.placeholder.com/60'}" alt="thumb" />
+        <div class="track-meta">
+          <strong>${track.title}</strong>
+          <span>${track.artist || ''}</span>
+        </div>
+        <span class="pill">선택</span>
+      `;
+      li.onclick = () => selectTrack(track);
+      trackList.appendChild(li);
+    });
+  }
+
+  let currentTrack;
+
+  function selectTrack(track) {
+    currentTrack = track;
+    nowPlaying.textContent = `${track.title} - ${track.artist}`;
+    if (track.youtubeEmbedUrl) {
+      playerFrame.src = track.youtubeEmbedUrl + '?autoplay=1';
+    } else {
+      playerFrame.src = '';
+      nowPlaying.textContent += ' (YouTube 링크 없음)';
+    }
+  }
+
+  async function logPlayback() {
+    if (!currentTrack) {
+      alert('먼저 곡을 선택하세요.');
+      return;
+    }
+    const token = localStorage.getItem('jwt');
+    if (!token) {
+      alert('로그인이 필요합니다.');
+      return;
+    }
+    try {
+      const res = await fetch(`${BASE_URL}/api/tracks/${currentTrack.spotifyTrackId}/playbacks`, {
+        method: 'POST',
+        headers: { 'Authorization': token }
+      });
+      if (!res.ok) throw new Error('재생 로그 실패');
+      alert('재생 기록이 저장되었습니다.');
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+</script>
+</body>
+</html>

@@ -47,7 +47,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/spotify/**").permitAll()
                         .requestMatchers("/api/youtube/**").permitAll()
+                        .requestMatchers("/api/player/search", "/api/player/tracks/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/", "/index.html", "/dev-api-inspector.html", "/player-dashboard.html", "/css/**", "/js/**", "/images/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
