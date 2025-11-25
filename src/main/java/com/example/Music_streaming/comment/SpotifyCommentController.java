@@ -19,39 +19,39 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/playlist-tracks/{playlistTrackId}/comments")
 @RequiredArgsConstructor
-public class CommentController {
+@RequestMapping("/api/spotify-tracks/{spotifyTrackId}/comments")
+public class SpotifyCommentController {
 
     private final CommentService commentService;
 
     @PostMapping
     public ResponseEntity<CommentResponse> addComment(
-            @PathVariable Long playlistTrackId,
+            @PathVariable String spotifyTrackId,
             @RequestBody CommentRequest request,
             @AuthenticationPrincipal UserDetails principal
     ) {
         String email = requireUser(principal);
-        Comment saved = commentService.addComment(playlistTrackId, email, request);
+        Comment saved = commentService.addCommentForSpotify(spotifyTrackId, email, request);
         return ResponseEntity.ok(new CommentResponse(saved));
     }
 
     @GetMapping
     public ResponseEntity<List<CommentResponse>> getComments(
-            @PathVariable Long playlistTrackId,
+            @PathVariable String spotifyTrackId,
             @RequestParam(required = false, name = "satisfactionType") SatisfactionType satisfactionType
     ) {
-        return ResponseEntity.ok(commentService.getComments(playlistTrackId, satisfactionType));
+        return ResponseEntity.ok(commentService.getCommentsBySpotify(spotifyTrackId, satisfactionType));
     }
 
     @DeleteMapping("/{commentId}")
     public ResponseEntity<String> deleteComment(
-            @PathVariable Long playlistTrackId,
+            @PathVariable String spotifyTrackId,
             @PathVariable Long commentId,
             @AuthenticationPrincipal UserDetails principal
     ) {
         String email = requireUser(principal);
-        commentService.deleteComment(playlistTrackId, commentId, email);
+        commentService.deleteCommentBySpotify(spotifyTrackId, commentId, email);
         return ResponseEntity.ok("삭제 완료");
     }
 

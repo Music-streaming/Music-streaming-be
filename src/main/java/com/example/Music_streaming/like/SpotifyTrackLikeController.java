@@ -14,44 +14,44 @@ import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/tracks/{trackId}/like")
-public class TrackLikeController {
+@RequestMapping("/api/spotify-tracks/{spotifyTrackId}/like")
+public class SpotifyTrackLikeController {
 
-    private final TrackLikeService likeService;
+    private final SpotifyTrackLikeService likeService;
 
     @PostMapping
     public ResponseEntity<Boolean> toggleLike(
-            @PathVariable Long trackId,
+            @PathVariable String spotifyTrackId,
             @AuthenticationPrincipal UserDetails principal
     ) {
         String email = requireUser(principal);
-        boolean liked = likeService.toggleLike(trackId, email);
+        boolean liked = likeService.toggleLike(spotifyTrackId, email);
         return ResponseEntity.ok(liked);
     }
 
     @GetMapping("/count")
-    public ResponseEntity<Long> count(@PathVariable Long trackId) {
-        long count = likeService.count(trackId);
+    public ResponseEntity<Long> count(@PathVariable String spotifyTrackId) {
+        long count = likeService.count(spotifyTrackId);
         return ResponseEntity.ok(count);
     }
 
     @GetMapping("/status")
     public ResponseEntity<Boolean> status(
-            @PathVariable Long trackId,
+            @PathVariable String spotifyTrackId,
             @AuthenticationPrincipal UserDetails principal
     ) {
         String email = requireUser(principal);
-        boolean liked = likeService.isLiked(trackId, email);
+        boolean liked = likeService.isLiked(spotifyTrackId, email);
         return ResponseEntity.ok(liked);
     }
 
     @GetMapping("/summary")
     public ResponseEntity<TrackLikeSummaryResponse> summary(
-            @PathVariable Long trackId,
+            @PathVariable String spotifyTrackId,
             @AuthenticationPrincipal UserDetails principal
     ) {
         String email = principal != null ? principal.getUsername() : null;
-        TrackLikeSummaryResponse summary = likeService.summary(trackId, email);
+        TrackLikeSummaryResponse summary = likeService.summary(spotifyTrackId, email);
         return ResponseEntity.ok(summary);
     }
 

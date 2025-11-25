@@ -1,6 +1,7 @@
 package com.example.Music_streaming.comment;
 
 import com.example.Music_streaming.playlist.PlaylistTrack;
+import com.example.Music_streaming.track.SatisfactionType;
 import com.example.Music_streaming.user.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -29,8 +30,11 @@ public class Comment {
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "playlist_track_id", nullable = false)
+    @JoinColumn(name = "playlist_track_id")
     private PlaylistTrack playlistTrack;
+
+    // Spotify 원본 트랙에 바로 달린 댓글일 때 사용
+    private String spotifyTrackId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
@@ -39,6 +43,9 @@ public class Comment {
     @Builder.Default
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comment> children = new ArrayList<>();
+
+    @Enumerated(EnumType.STRING)
+    private SatisfactionType satisfactionType;
 
     private LocalDateTime createdAt;
 

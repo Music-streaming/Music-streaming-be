@@ -65,4 +65,22 @@ public class TrackLikeService {
 
         return likeRepository.existsByTrackAndUser(track, user);
     }
+
+    @Transactional(readOnly = true)
+    public TrackLikeSummaryResponse summary(Long trackId, String userEmail) {
+        Track track = trackRepository.findById(trackId)
+                .orElseThrow(() -> new RuntimeException("Track not found"));
+
+        long count = likeRepository.countByTrack(track);
+
+        if (userEmail == null) {
+            return new TrackLikeSummaryResponse(count, null);
+        }
+
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        boolean liked = likeRepository.existsByTrackAndUser(track, user);
+        return new TrackLikeSummaryResponse(count, liked);
+    }
 }
