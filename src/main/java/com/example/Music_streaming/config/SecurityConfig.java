@@ -3,6 +3,7 @@ package com.example.Music_streaming.config;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -45,6 +46,8 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/spotify/tokens").authenticated()
+                        .requestMatchers("/api/genres/**").authenticated()
                         .requestMatchers("/api/spotify/**").permitAll()
                         .requestMatchers("/api/youtube/**").permitAll()
                         .requestMatchers("/api/player/search", "/api/player/tracks/**").permitAll()

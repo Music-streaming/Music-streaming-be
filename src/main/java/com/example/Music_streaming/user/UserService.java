@@ -1,6 +1,7 @@
 package com.example.Music_streaming.user;
 
 import com.example.Music_streaming.config.JwtTokenProvider;
+import com.example.Music_streaming.spotify.dto.SpotifyTokenRequest;
 import com.example.Music_streaming.user.dto.LoginRequestDto;
 import com.example.Music_streaming.user.dto.LoginResponseDto;
 import com.example.Music_streaming.user.dto.RegisterRequestDto;
@@ -9,6 +10,12 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.time.Instant;
+
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 
 @Service
 @RequiredArgsConstructor
@@ -58,5 +65,25 @@ public class UserService {
 
     public Long getCurrentUserId() {
         return getCurrentUser().getId();
+    }
+
+    @Transactional
+    public void updateSpotifyTokens(SpotifyTokenRequest request) {
+        if (request == null || request.accessToken() == null || request.accessToken().isBlank()) {
+            throw new IllegalArgumentException("Spotify Access Token이 필요합니다.");
+        }
+        User user = getCurrentUser();
+        Instant expiresAt = request.expiresIn() == null
+                ? null
+                : Instant.now().plusSeconds(request.expiresIn());
+        user.updateSpotifyTokens(request.accessToken(), request.refreshToken(), expiresAt);
+    }
+
+    public String getCurrentUserSpotifyAccessToken() {
+        User user = getCurrentUser();
+        if (!user.hasValidSpotifyAccessToken()) {
+            throw new ResponseStatusException(UNAUTHORIZED, "Spotify 토큰이 없거나 만료되었습니다.");
+        }
+        return user.getSpotifyAccessToken();
     }
 }
